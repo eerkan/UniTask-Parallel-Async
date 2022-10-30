@@ -161,7 +161,7 @@ namespace EmreErkanGames.UniTaskExtensions.Core.Concrete
                             taskCountLimitsemaphoreSlim.Release();
                             Interlocked.Decrement(ref runningTaskCount);
                             if (Interlocked.CompareExchange(ref runningTaskCount, -1, 0) == 0)
-                                completeSemphoreSlim?.Release();
+                                completeSemphoreSlim.Release();
                         }
                     }
                 }, false, cancellationToken: cancellationTokenSource.Token);

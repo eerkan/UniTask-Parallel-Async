@@ -29,6 +29,11 @@ public class Test : MonoBehaviour
            _cancellationTokenSource.Cancel();
     }
 
+    private void OnDestroy()
+    {
+        _cancellationTokenSource.Cancel();
+    }
+
     private async UniTask TestUniTaskParallelAsync()
     {
         await TestUniTaskParallelForEachAsync();

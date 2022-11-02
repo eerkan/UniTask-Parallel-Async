@@ -28,6 +28,7 @@ namespace EmreErkanGames.UniTaskExtensions.Core.Concrete
                 IsBreakItem = true
             };
             var disposed = 0L;
+            var disposedLock = new object();
             var parallelCancellationTokenSource = new CancellationTokenSource();
             var completeSemphoreSlim = new SemaphoreSlim(1);
             var taskCountLimitsemaphoreSlim = new SemaphoreSlim(parallelOptions.MaxDegreeOfParallelism);
@@ -61,17 +62,26 @@ namespace EmreErkanGames.UniTaskExtensions.Core.Concrete
                     try
                     {
                         await body.Invoke(item2, parallelAsyncLoopState);
-                        if (Interlocked.Read(ref disposed) == 0 && parallelCancellationTokenSource.IsCancellationRequested)
-                            parallelAsyncLoopResult.BreakItem = item2;
+                        lock (disposedLock)
+                        {
+                            if (Interlocked.Read(ref disposed) == 0)
+                            {
+                                if (parallelCancellationTokenSource.IsCancellationRequested)
+                                    parallelAsyncLoopResult.BreakItem = item2;
+                            }
+                        }
                     }
                     finally
                     {
-                        if (Interlocked.Read(ref disposed) == 0)
+                        lock (disposedLock)
                         {
-                            taskCountLimitsemaphoreSlim.Release();
-                            Interlocked.Decrement(ref runningTaskCount);
-                            if (Interlocked.CompareExchange(ref runningTaskCount, -1, 0) == 0)
-                                completeSemphoreSlim.Release();
+                            if (Interlocked.Read(ref disposed) == 0)
+                            {
+                                taskCountLimitsemaphoreSlim.Release();
+                                Interlocked.Decrement(ref runningTaskCount);
+                                if (Interlocked.CompareExchange(ref runningTaskCount, -1, 0) == 0)
+                                    completeSemphoreSlim.Release();
+                            }
                         }
                     }
                 }, false, cancellationToken: cancellationTokenSource.Token);
@@ -85,11 +95,14 @@ namespace EmreErkanGames.UniTaskExtensions.Core.Concrete
                 // ignored
             }
             parallelAsyncLoopResult.IsCompleted = !parallelCancellationTokenSource.IsCancellationRequested;
-            Interlocked.Increment(ref disposed);
-            taskCountLimitsemaphoreSlim.Dispose();
-            completeSemphoreSlim.Dispose();
-            parallelCancellationTokenSource.Dispose();
-            cancellationTokenSource.Dispose();
+            lock (disposedLock)
+            {
+                Interlocked.Increment(ref disposed);
+                taskCountLimitsemaphoreSlim.Dispose();
+                completeSemphoreSlim.Dispose();
+                parallelCancellationTokenSource.Dispose();
+                cancellationTokenSource.Dispose();
+            }
             return parallelAsyncLoopResult;
         }
 
@@ -118,6 +131,7 @@ namespace EmreErkanGames.UniTaskExtensions.Core.Concrete
                 IsBreakItem = false
             };
             var disposed = 0L;
+            var disposedLock = new object();
             var parallelCancellationTokenSource = new CancellationTokenSource();
             var completeSemphoreSlim = new SemaphoreSlim(1);
             var taskCountLimitsemaphoreSlim = new SemaphoreSlim(parallelOptions.MaxDegreeOfParallelism);
@@ -151,17 +165,26 @@ namespace EmreErkanGames.UniTaskExtensions.Core.Concrete
                     try
                     {
                         await body.Invoke(item2, parallelAsyncLoopState);
-                        if (Interlocked.Read(ref disposed) == 0 && parallelCancellationTokenSource.IsCancellationRequested)
-                            parallelAsyncLoopResult.BreakIndex = item2;
+                        lock (disposedLock)
+                        {
+                            if (Interlocked.Read(ref disposed) == 0)
+                            {
+                                if (parallelCancellationTokenSource.IsCancellationRequested)
+                                    parallelAsyncLoopResult.BreakIndex = item2;
+                            }
+                        }
                     }
                     finally
                     {
-                        if (Interlocked.Read(ref disposed) == 0)
+                        lock (disposedLock)
                         {
-                            taskCountLimitsemaphoreSlim.Release();
-                            Interlocked.Decrement(ref runningTaskCount);
-                            if (Interlocked.CompareExchange(ref runningTaskCount, -1, 0) == 0)
-                                completeSemphoreSlim.Release();
+                            if (Interlocked.Read(ref disposed) == 0)
+                            {
+                                taskCountLimitsemaphoreSlim.Release();
+                                Interlocked.Decrement(ref runningTaskCount);
+                                if (Interlocked.CompareExchange(ref runningTaskCount, -1, 0) == 0)
+                                    completeSemphoreSlim.Release();
+                            }
                         }
                     }
                 }, false, cancellationToken: cancellationTokenSource.Token);
@@ -175,11 +198,14 @@ namespace EmreErkanGames.UniTaskExtensions.Core.Concrete
                 // ignored
             }
             parallelAsyncLoopResult.IsCompleted = !parallelCancellationTokenSource.IsCancellationRequested;
-            Interlocked.Increment(ref disposed);
-            taskCountLimitsemaphoreSlim.Dispose();
-            completeSemphoreSlim.Dispose();
-            parallelCancellationTokenSource.Dispose();
-            cancellationTokenSource.Dispose();
+            lock (disposedLock)
+            {
+                Interlocked.Increment(ref disposed);
+                taskCountLimitsemaphoreSlim.Dispose();
+                completeSemphoreSlim.Dispose();
+                parallelCancellationTokenSource.Dispose();
+                cancellationTokenSource.Dispose();
+            }
             return parallelAsyncLoopResult;
         }
 
